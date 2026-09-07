@@ -24,7 +24,7 @@ st.caption("Grounded extraction → normalized facts → cross-document resoluti
 
 with st.sidebar:
     st.header("Workspace")
-    model = st.text_input("LLM model", os.getenv("OPENAI_MODEL", "gpt-4o-mini"))
+    
     api_enabled = bool(os.getenv("OPENAI_API_KEY"))
     if api_enabled:
         st.success("LLM mode enabled")
