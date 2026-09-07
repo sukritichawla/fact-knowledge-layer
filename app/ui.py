@@ -120,9 +120,9 @@ if layer.facts:
         st.markdown("#### Grounded facts")
         st.caption("Showing up to 100 facts in the UI. The complete layer remains available through export.")
         rows = []
-        for fact in layer.facts[:100]:
+        for fact_number, fact in enumerate(layer.facts[:100], start=1):
             rows.append({
-                "subject": fact.subject,
+                "fact number": fact_number, "subject": fact.subject,
                 "predicate": fact.predicate,
                 "value": fact.value,
                 "normalized": fact.normalized_value or "",
