@@ -151,3 +151,15 @@ OpenAI structured-output parsing is used for fact extraction and relationship co
 ## Video demo
 
 Add the final demo URL here after recording. Keep the demonstration under three minutes and show: PDF upload → grounded facts → one corroboration → one contradiction → one context resolution → the failure handling path.
+
+### Dataset-scale validation
+
+For reproducible evaluation outside the UI, `scripts/run_dataset.py` recursively discovers PDFs under a directory and sends every file through the same incremental ingestion path used by the Streamlit uploader. It is intentionally filename-agnostic and writes a JSON audit report with per-file status plus document/fact/relationship and evidence-verification counts.
+
+Example:
+
+```bash
+python scripts/run_dataset.py path/to/starter-datasets
+```
+
+Starter PDFs are kept outside the repository; the repository contains the runner and validation logic rather than hardcoding their filenames or facts.
