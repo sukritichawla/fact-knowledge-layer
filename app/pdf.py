@@ -1,7 +1,7 @@
 import hashlib
 import re
 from dataclasses import dataclass
-import fitz
+import pymupdf
 
 @dataclass
 class PageText:
@@ -12,7 +12,7 @@ def document_id(pdf_bytes: bytes) -> str:
     return hashlib.sha256(pdf_bytes).hexdigest()[:16]
 
 def extract_pages(pdf_bytes: bytes) -> list[PageText]:
-    with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
+    with pymupdf.open(stream=pdf_bytes, filetype="pdf") as doc:
         return [PageText(i + 1, page.get_text("text")) for i, page in enumerate(doc)]
 
 def publication_date(text: str) -> str | None:
@@ -58,7 +58,7 @@ def locate_quote(page_text: str, quote: str) -> tuple[str, int, bool, str | None
     return page_text[:500].strip(), 0, False, "Unable to verify model quote against page text"
 
 def highlighted_page_png(pdf_bytes: bytes, page_number: int, quote: str) -> bytes:
-    with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
+    with pymupdf.open(stream=pdf_bytes, filetype="pdf") as doc:
         page = doc[page_number - 1]
         rects = page.search_for(quote[:250]) if quote else []
         if not rects and quote:
@@ -67,5 +67,5 @@ def highlighted_page_png(pdf_bytes: bytes, page_number: int, quote: str) -> byte
         for rect in rects[:8]:
             annot = page.add_highlight_annot(rect)
             annot.update()
-        pix = page.get_pixmap(matrix=fitz.Matrix(1.5, 1.5), alpha=False, annots=True)
+        pix = page.get_pixmap(matrix=pymupdf.Matrix(1.5, 1.5), alpha=False, annots=True)
         return pix.tobytes("png")

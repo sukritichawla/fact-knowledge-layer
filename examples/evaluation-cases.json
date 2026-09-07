@@ -1,0 +1,37 @@
+{
+  "description": "Source-grounded evaluation targets for the supplied Delhivery starter PDFs. These fixtures are for validation/demo only; the runtime does not depend on these filenames or values.",
+  "cases": [
+    {
+      "id": "corroborated-revenue",
+      "type": "Corroborated",
+      "documents": [
+        {"filename": "02-delhivery-annual-report-fy24-excerpt.pdf", "page": 4, "quote_contains": "81,415Mn"},
+        {"filename": "03-delhivery-q4-fy24-earnings-presentation.pdf", "page": 6, "quote_contains": "8,142 Cr"}
+      ]
+    },
+    {
+      "id": "source-inconsistency-female-workforce",
+      "type": "Contradicted",
+      "documents": [
+        {"filename": "02-delhivery-annual-report-fy24-excerpt.pdf", "page": 8, "quote_contains": "increased 60% year-on-year"},
+        {"filename": "02-delhivery-annual-report-fy24-excerpt.pdf", "page": 8, "quote_contains": "increased by 59% year-on-year"}
+      ]
+    },
+    {
+      "id": "context-active-customers",
+      "type": "Context-Resolved",
+      "documents": [
+        {"filename": "01-delhivery-prospectus-2022-excerpt.pdf", "page": 42, "quote_contains": "23,113 Active Customers"},
+        {"filename": "03-delhivery-q4-fy24-earnings-presentation.pdf", "page": 8, "quote_contains": "33,278"}
+      ]
+    },
+    {
+      "id": "evidence-verification-failure",
+      "type": "Extraction/Reasoning Failure",
+      "documents": [
+        {"filename": "02-delhivery-annual-report-fy24-excerpt.pdf", "page": 4, "quote_contains": "Revenue from services"}
+      ],
+      "failure_test": "deliberately mismatched quote must be marked unverified"
+    }
+  ]
+}

@@ -7,3 +7,5 @@ __pycache__/
 .streamlit/secrets.toml
 data/*.db
 data/uploads/
+data/evaluation-report.json
+data/starter-datasets/

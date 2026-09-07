@@ -14,7 +14,7 @@ st.caption("Grounded extraction → normalized facts → cross-document resoluti
 
 with st.sidebar:
     model = st.text_input("LLM model", os.getenv("OPENAI_MODEL", "gpt-4o-mini"))
-    st.write("LLM:", "✅ configured" if os.getenv("OPENAI_API_KEY") else "⚠️ configure OPENAI_API_KEY")
+    st.write("Extraction:", "OpenAI structured output" if os.getenv("OPENAI_API_KEY") else "Offline deterministic mode")
     st.markdown("**Relationships**")
     st.write("🟢 Corroborated · 🔴 Contradicted · 🟡 Context-Resolved · 🔵 Related")
     st.markdown("**Evidence**")
@@ -22,22 +22,19 @@ with st.sidebar:
 
 uploads = st.file_uploader("Drop one or more PDFs", type=["pdf"], accept_multiple_files=True)
 if uploads:
-    if not os.getenv("OPENAI_API_KEY"):
-        st.error("OPENAI_API_KEY is required for extraction.")
-    else:
-        for upload in uploads:
-            raw = upload.getvalue()
-            with st.status(f"Processing {upload.name}…") as status:
-                try:
-                    result = ingest_pdf(raw, upload.name, model)
-                    if result.status == "skipped":
-                        status.update(label=f"Skipped existing document: {upload.name}", state="complete")
-                    else:
-                        status.update(label=f"Processed {upload.name}: {result.fact_count} grounded facts", state="complete")
-                    st.caption(result.message)
-                except Exception as e:
-                    status.update(label=f"Failed: {upload.name}", state="error")
-                    st.exception(e)
+    for upload in uploads:
+        raw = upload.getvalue()
+        with st.status(f"Processing {upload.name}…") as status:
+            try:
+                result = ingest_pdf(raw, upload.name, model)
+                if result.status == "skipped":
+                    status.update(label=f"Skipped existing document: {upload.name}", state="complete")
+                else:
+                    status.update(label=f"Processed {upload.name}: {result.fact_count} grounded facts", state="complete")
+                st.caption(result.message)
+            except Exception as e:
+                status.update(label=f"Failed: {upload.name}", state="error")
+                st.exception(e)
 
 layer = load_layer()
 c1, c2, c3, c4 = st.columns(4)

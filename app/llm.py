@@ -35,7 +35,8 @@ def client():
 
 def extract_facts(text: str, filename: str, model: str) -> ExtractionResult:
     if not os.getenv("OPENAI_API_KEY"):
-        raise RuntimeError("OPENAI_API_KEY is not configured")
+        from .local_extract import extract_local
+        return extract_local(text, filename)
     prompt = f'''Extract meaningful numerical or semantic facts from this PDF excerpt. Every fact must be directly supported by the supplied text. Return the page number and an exact source quote from that page. Do not infer facts that are not stated. Capture date/period and scope when present. Do not merge values from different periods. Return only facts useful for cross-document knowledge resolution.\n\nFILE: {filename}\nTEXT:\n{text}'''
     r = client().responses.parse(
         model=model,
@@ -49,7 +50,8 @@ def extract_facts(text: str, filename: str, model: str) -> ExtractionResult:
 
 def compare_facts(facts: list, publication_dates: dict[str, str | None], model: str) -> ComparisonResult:
     if not os.getenv("OPENAI_API_KEY") or len(facts) < 2:
-        return ComparisonResult(relationships=[])
+        from .local_compare import compare_local
+        return compare_local(facts, publication_dates)
     compact = [{
         "id": f.id, "subject": f.subject, "predicate": f.predicate,
         "value": f.value, "normalized_value": f.normalized_value,

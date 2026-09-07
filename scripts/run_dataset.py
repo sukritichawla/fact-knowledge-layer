@@ -7,9 +7,14 @@ The script is deliberately filename-agnostic: any PDF found recursively is
 processed through the same ingestion path used by the Streamlit UI.
 """
 import argparse
+import sys
 import json
 import os
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from app.evaluation import summarize_layer
 from app.db import load_layer
@@ -23,8 +28,8 @@ def main() -> int:
     parser.add_argument("--report", type=Path, default=Path("data/evaluation-report.json"))
     args = parser.parse_args()
 
-    if not os.getenv("OPENAI_API_KEY"):
-        parser.error("OPENAI_API_KEY is required")
+    mode = "openai" if os.getenv("OPENAI_API_KEY") else "offline"
+    print(f"Extraction mode: {mode}")
     if not args.directory.exists() or not args.directory.is_dir():
         parser.error(f"Not a directory: {args.directory}")
 

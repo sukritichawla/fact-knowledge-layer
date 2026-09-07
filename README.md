@@ -5,7 +5,8 @@ A small, inspectable fact knowledge layer for extracting grounded facts from PDF
 ## What it demonstrates
 
 - Structured, Pydantic-validated fact extraction
-- Two-stage LLM workflow: extraction first, comparison second
+- Two-stage extraction workflow: optional structured LLM extraction first, comparison second
+- Zero-cost offline deterministic fallback for local evaluation when no API key is configured
 - Exact page/quote evidence with verification status
 - Unit normalization and explicit date/scope fields
 - Corroborated / Contradicted / Context-Resolved / Related relationships
@@ -97,7 +98,7 @@ pip install -r requirements.txt
 copy .env.example .env
 ```
 
-Set `OPENAI_API_KEY` in `.env`.
+Set `OPENAI_API_KEY` in `.env` only if you want the optional structured-LLM path. **It is not required for local tests or offline dataset evaluation.** Without a key, FactLayer uses deterministic numeric/metric-context extraction and deterministic relationship blocking/comparison.
 
 Run:
 
@@ -129,9 +130,9 @@ The prototype supports a `GOOGLE_SHEETS_WEBHOOK_URL` environment variable. The e
 
 ## Limitations
 
-- Extraction quality still depends on the selected model.
+- LLM extraction quality depends on the selected model when API mode is enabled. The offline fallback is intentionally conservative and less semantically rich.
 - Scanned/image-only PDFs require OCR, which is not included in this prototype.
-- The current comparison stage can be expensive as the number of facts grows; candidate blocking should be added for large corpora.
+- Offline extraction intentionally caps candidates per document to keep local evaluation bounded; richer semantic extraction is available through the optional LLM path.
 - Google Sheets is exposed through a webhook rather than requiring service-account credentials in the repository.
 - Publication-date extraction is heuristic when a document contains multiple dates.
 
@@ -154,7 +155,7 @@ Add the final demo URL here after recording. Keep the demonstration under three 
 
 ### Dataset-scale validation
 
-For reproducible evaluation outside the UI, `scripts/run_dataset.py` recursively discovers PDFs under a directory and sends every file through the same incremental ingestion path used by the Streamlit uploader. It is intentionally filename-agnostic and writes a JSON audit report with per-file status plus document/fact/relationship and evidence-verification counts.
+For reproducible evaluation outside the UI, `scripts/run_dataset.py` recursively discovers PDFs under a directory and sends every file through the same incremental ingestion path used by the Streamlit uploader. It is intentionally filename-agnostic and writes a JSON audit report with per-file status plus document/fact/relationship and evidence-verification counts. If `OPENAI_API_KEY` is absent, the runner automatically uses the zero-cost offline path.
 
 Example:
 

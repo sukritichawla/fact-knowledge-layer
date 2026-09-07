@@ -1,4 +1,5 @@
 import hashlib
+import os
 import re
 from itertools import combinations
 from .models import DocumentRecord, Fact, Evidence, Relationship, Relation
@@ -6,7 +7,7 @@ from .pdf import extract_pages, document_id, publication_date, locate_quote
 from .llm import extract_facts, compare_facts
 
 def normalize_value(value: str, unit: str | None) -> str | None:
-    raw = value.strip().replace(",", "")
+    raw = value.strip().replace(",", "").replace("₹", "").replace("$", "").replace("€", "").replace("£", "")
     m = re.fullmatch(r"([-+]?\d+(?:\.\d+)?)\s*(%|thousand|million|billion|mn|bn|k|cr)?", raw, re.I)
     if not m:
         return None
@@ -38,9 +39,13 @@ def process_pdf(pdf_bytes: bytes, filename: str, model: str) -> tuple[DocumentRe
     pages = extract_pages(pdf_bytes)
     page_map = {p.page: p.text for p in pages}
     extracted=[]
-    for chunk in _chunks(pages):
-        result = extract_facts(chunk, filename, model)
-        extracted.extend(result.facts)
+    if os.getenv("OPENAI_API_KEY"):
+        for chunk in _chunks(pages):
+            result = extract_facts(chunk, filename, model)
+            extracted.extend(result.facts)
+    else:
+        full_text = "\n".join(f"[PAGE {p.page}]\n{p.text}" for p in pages)
+        extracted.extend(extract_facts(full_text, filename, model).facts)
     facts=[]; seen=set()
     for ef in extracted:
         page_text=page_map.get(ef.page, "")
@@ -68,7 +73,10 @@ def _comparison_candidates(facts: list[Fact]) -> list[Fact]:
             and b.normalized_value is not None
             and a.normalized_value == b.normalized_value
         )
-        if same_claim or same_value:
+        token_a = {t for t in re.findall(r"[a-z][a-z0-9/-]*", a.predicate.casefold()) if len(t) > 2}
+        token_b = {t for t in re.findall(r"[a-z][a-z0-9/-]*", b.predicate.casefold()) if len(t) > 2}
+        lexical_overlap = len(token_a & token_b) / max(1, len(token_a | token_b))
+        if same_claim or same_value or lexical_overlap >= 0.35:
             candidates.extend((a, b))
     return list({f.id: f for f in candidates}.values())
 
