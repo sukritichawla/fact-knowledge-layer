@@ -25,7 +25,8 @@ st.caption("Grounded extraction → normalized facts → cross-document resoluti
 with st.sidebar:
     st.header("Workspace")
     
-    api_enabled = bool(os.getenv("OPENAI_API_KEY"))`r`n    model = os.getenv("OPENAI_MODEL", "gpt-5-mini")
+    api_enabled = bool(os.getenv("OPENAI_API_KEY"))
+    model = os.getenv("OPENAI_MODEL", "gpt-5-mini")
     if api_enabled:
         st.success("LLM mode enabled")
         st.caption("Structured extraction and comparison use the configured OpenAI model.")
