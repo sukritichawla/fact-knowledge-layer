@@ -3,7 +3,7 @@ import streamlit as st
 from dotenv import load_dotenv
 from .db import init_db,load_layer,upsert_document,upsert_facts,upsert_relationships,document_exists
 from .engine import process_pdf,compare_layer
-from .export import excel_bytes,push_webhook
+from .export import excel_bytes,json_bytes,push_webhook
 from .pdf import document_id,highlighted_page_png
 
 load_dotenv(); init_db()
@@ -60,6 +60,7 @@ if layer.facts:
         if os.path.exists(pdf_path): st.image(highlighted_page_png(open(pdf_path,"rb").read(),f.evidence.page,f.evidence.quote),caption=f"Page {f.evidence.page} · evidence {'verified' if f.evidence.verified else 'fallback'}")
         st.caption(f"Character offsets: {f.evidence.char_start}–{f.evidence.char_end}. {f.evidence.verification_note or ''}")
     with tabs[3]:
+        st.download_button("Download JSON",json_bytes(layer),"fact-knowledge-layer.json","application/json")
         st.download_button("Download Excel",excel_bytes(layer),"fact-knowledge-layer.xlsx","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         if os.getenv("GOOGLE_SHEETS_WEBHOOK_URL") and st.button("Push to Google Sheets"):
             try: st.success(push_webhook(layer))

@@ -13,7 +13,7 @@ A small, inspectable fact knowledge layer for extracting grounded facts from PDF
 - Incremental PDF ingestion with content-addressed document IDs
 - Deterministic fact and relationship IDs for safe reprocessing
 - Streamlit inspection UI with highlighted source pages
-- Excel export and optional Google Sheets webhook export
+- Deterministic JSON export, Excel export, and optional Google Sheets webhook export
 - Explicit failure handling rather than silently accepting unsupported evidence
 
 The assignment asks for grounded facts, cross-document relationships, a simple upload UI/API, four demonstration cases, meaningful Git usage, and README documentation of setup, approach, limitations and demo. This prototype is designed around those requirements.
@@ -113,7 +113,7 @@ Each PDF receives a SHA-256-derived ID. If the same file is uploaded again, the 
 
 ## Google Sheets
 
-The prototype supports a `GOOGLE_SHEETS_WEBHOOK_URL` environment variable. The endpoint receives JSON containing the resolved facts and relationships and can be implemented with Google Apps Script or another lightweight integration. Excel remains available as a no-setup fallback.
+The prototype supports a `GOOGLE_SHEETS_WEBHOOK_URL` environment variable. The endpoint receives JSON containing the resolved facts and relationships and can be implemented with Google Apps Script or another lightweight integration. See [`docs/google-sheets.md`](docs/google-sheets.md) for a minimal receiver. The same validated layer is also downloadable as deterministic JSON, while Excel remains available as a no-setup tabular fallback.
 
 ## Engineering trade-offs
 
