@@ -1,3 +1,4 @@
+import json
 import os
 from typing import Optional
 from pydantic import BaseModel, Field
@@ -57,7 +58,7 @@ def compare_facts(facts: list, publication_dates: dict[str, str | None], model: 
         "publication_date": publication_dates.get(f.evidence.document_id),
         "quote": f.evidence.quote,
     } for f in facts]
-    prompt = '''Compare only meaningfully related facts. Use explicit evidence, date/period, scope and units before reasoning.\n\nClassification rules:\n- Corroborated: independent documents support the same claim; minor rounding or wording differences are acceptable.\n- Contradicted: the same claim has incompatible values under materially matching time, scope and units.\n- Context-Resolved: values differ, but the difference is explained by explicit time, scope, population, unit, or measurement-definition context.\n- Related: same topic but insufficient evidence for one of the above.\nNever use outside knowledge. Explain the decisive evidence briefly.''' + "\n\nFACTS:\n" + str(compact)
+    prompt = '''Compare only meaningfully related facts from different source documents. Use explicit evidence, date/period, scope and units before reasoning.\n\nClassification rules:\n- Corroborated: independent documents support the same claim; minor rounding or wording differences are acceptable.\n- Contradicted: the same claim has incompatible values under materially matching time, scope and units.\n- Context-Resolved: values differ, but the difference is explained by explicit time, scope, population, unit, or measurement-definition context.\n- Related: same topic but insufficient evidence for one of the above.\nNever use outside knowledge. Do not compare facts from the same document. Explain the decisive evidence briefly.''' + "\n\nFACTS:\n" + json.dumps(compact, ensure_ascii=False, sort_keys=True)
     r = client().responses.parse(
         model=model,
         input=[

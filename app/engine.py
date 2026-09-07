@@ -1,5 +1,6 @@
 import hashlib
 import re
+from itertools import combinations
 from .models import DocumentRecord, Fact, Evidence, Relationship, Relation
 from .pdf import extract_pages, document_id, publication_date, locate_quote
 from .llm import extract_facts, compare_facts
@@ -20,7 +21,7 @@ def normalize_value(value: str, unit: str | None) -> str | None:
         if "billion" in u or u in {"bn", "b"}: n *= 1e9
         elif "million" in u or u in {"mn", "m"}: n *= 1e6
         elif "crore" in u or u == "cr": n *= 1e7
-    return f"{n:g}"
+    return str(int(n)) if n.is_integer() else f"{n:g}"
 
 def _chunks(pages, max_chars=18000):
     chunks=[]; current=[]; size=0
@@ -52,9 +53,29 @@ def process_pdf(pdf_bytes: bytes, filename: str, model: str) -> tuple[DocumentRe
     meta=DocumentRecord(id=doc_id,filename=filename,publication_date=publication_date("\n".join(p.text for p in pages)),pages=len(pages))
     return meta,facts
 
+def _comparison_candidates(facts: list[Fact]) -> list[Fact]:
+    """Block comparisons to related facts across documents before calling the LLM."""
+    candidates = []
+    for a, b in combinations(facts, 2):
+        if a.evidence.document_id == b.evidence.document_id:
+            continue
+        same_claim = (
+            a.subject.strip().casefold() == b.subject.strip().casefold()
+            and a.predicate.strip().casefold() == b.predicate.strip().casefold()
+        )
+        same_value = (
+            a.normalized_value is not None
+            and b.normalized_value is not None
+            and a.normalized_value == b.normalized_value
+        )
+        if same_claim or same_value:
+            candidates.extend((a, b))
+    return list({f.id: f for f in candidates}.values())
+
+
 def compare_layer(facts: list[Fact], model: str, documents: list[DocumentRecord] | None = None) -> list[Relationship]:
     publication_dates={d.id:d.publication_date for d in (documents or [])}
-    result=compare_facts(facts,publication_dates,model)
+    result=compare_facts(_comparison_candidates(facts),publication_dates,model)
     allowed={r.value for r in Relation}; out=[]
     for x in result.relationships:
         if x.source_fact_id == x.target_fact_id: continue
