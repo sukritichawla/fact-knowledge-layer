@@ -116,6 +116,12 @@ pytest
 
 Each PDF receives a SHA-256-derived ID. If the same file is uploaded again, the UI skips it. New documents are added to the SQLite layer without rebuilding prior documents. Relationship IDs are deterministic so rerunning comparison replaces the same relationship instead of creating duplicates.
 
+## Demo UI
+
+The Streamlit UI is organized as a short evaluator workflow: add PDFs, inspect the knowledge-layer counts, review grounded facts and cross-document relationships, inspect a fact's highlighted source page, view the evaluation audit, and export the resolved layer. The sidebar always states whether the workspace is using optional LLM mode or zero-cost offline mode.
+
+Offline mode requires no API key and makes no API calls. LLM mode is opt-in through `OPENAI_API_KEY`.
+
 ## Google Sheets
 
 The prototype supports a `GOOGLE_SHEETS_WEBHOOK_URL` environment variable. The endpoint receives JSON containing the resolved facts and relationships and can be implemented with Google Apps Script or another lightweight integration. See [`docs/google-sheets.md`](docs/google-sheets.md) for a minimal receiver. The same validated layer is also downloadable as deterministic JSON, while Excel remains available as a no-setup tabular fallback.

@@ -1,10 +1,20 @@
-import io
+﻿import io
 import os
+import re
 
 import pandas as pd
 import requests
 
 from .models import KnowledgeLayer
+
+
+_EXCEL_ILLEGAL_CHARS = re.compile(r"[\x00-\x08\x0B\x0C\x0E-\x1F]")
+
+
+def _clean_excel_value(value):
+    if isinstance(value, str):
+        return _EXCEL_ILLEGAL_CHARS.sub("", value)
+    return value
 
 
 def facts_dataframe(layer: KnowledgeLayer) -> pd.DataFrame:
@@ -34,8 +44,11 @@ def facts_dataframe(layer: KnowledgeLayer) -> pd.DataFrame:
 def relationships_dataframe(layer: KnowledgeLayer) -> pd.DataFrame:
     lookup = {f.id: f for f in layer.facts}
     rows = []
+
     for r in layer.relationships:
-        a, b = lookup.get(r.source_fact_id), lookup.get(r.target_fact_id)
+        a = lookup.get(r.source_fact_id)
+        b = lookup.get(r.target_fact_id)
+
         rows.append(
             {
                 "relationship_id": r.id,
@@ -52,6 +65,7 @@ def relationships_dataframe(layer: KnowledgeLayer) -> pd.DataFrame:
                 "confidence": r.confidence,
             }
         )
+
     return pd.DataFrame(rows)
 
 
@@ -61,12 +75,27 @@ def json_bytes(layer: KnowledgeLayer) -> bytes:
 
 
 def excel_bytes(layer: KnowledgeLayer) -> bytes:
+    """Export facts and relationships as a valid Excel workbook."""
+    facts = facts_dataframe(layer).map(_clean_excel_value)
+    relationships = relationships_dataframe(layer).map(_clean_excel_value)
+
     buf = io.BytesIO()
+
     with pd.ExcelWriter(buf, engine="openpyxl") as writer:
-        facts_dataframe(layer).to_excel(writer, index=False, sheet_name="Facts")
-        relationships_dataframe(layer).to_excel(
-            writer, index=False, sheet_name="Relationships"
+        # Always create the Facts worksheet.
+        facts.to_excel(
+            writer,
+            index=False,
+            sheet_name="Facts",
         )
+
+        # Always create the Relationships worksheet.
+        relationships.to_excel(
+            writer,
+            index=False,
+            sheet_name="Relationships",
+        )
+
     return buf.getvalue()
 
 
@@ -79,6 +108,8 @@ def push_webhook(layer: KnowledgeLayer) -> str:
         "facts": facts_dataframe(layer).fillna("").to_dict("records"),
         "relationships": relationships_dataframe(layer).fillna("").to_dict("records"),
     }
+
     response = requests.post(url, json=payload, timeout=30)
     response.raise_for_status()
+
     return response.text or "Google Sheets webhook accepted the payload"
