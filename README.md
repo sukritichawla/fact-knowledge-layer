@@ -18,6 +18,10 @@ A small, inspectable fact knowledge layer for extracting grounded facts from PDF
 
 The assignment asks for grounded facts, cross-document relationships, a simple upload UI/API, four demonstration cases, meaningful Git usage, and README documentation of setup, approach, limitations and demo. This prototype is designed around those requirements.
 
+## Incremental ingestion
+
+Uploaded PDFs are identified by a SHA-256 content hash. A document already present in SQLite is skipped rather than extracted again. New documents are persisted with their source PDF, grounded facts are added to the existing layer, and cross-document relationships are refreshed. The extraction and comparison pipeline does not depend on starter-dataset filenames or hardcoded facts.
+
 ## Architecture
 
 ```text

@@ -1,10 +1,10 @@
 import os
 import streamlit as st
 from dotenv import load_dotenv
-from .db import init_db, load_layer, upsert_document, upsert_facts, upsert_relationships, document_exists
-from .engine import process_pdf, compare_layer
+from .db import init_db, load_layer
+from .ingestion import ingest_pdf
 from .export import excel_bytes, json_bytes, push_webhook
-from .pdf import document_id, highlighted_page_png
+from .pdf import highlighted_page_png
 
 load_dotenv()
 init_db()
@@ -27,21 +27,14 @@ if uploads:
     else:
         for upload in uploads:
             raw = upload.getvalue()
-            doc_id = document_id(raw)
-            if document_exists(doc_id):
-                st.info(f"Skipped existing document: {upload.name}")
-                continue
             with st.status(f"Processing {upload.name}…") as status:
                 try:
-                    doc, facts = process_pdf(raw, upload.name, model)
-                    os.makedirs("data/uploads", exist_ok=True)
-                    with open(f"data/uploads/{doc.id}.pdf", "wb") as handle:
-                        handle.write(raw)
-                    upsert_document(doc)
-                    upsert_facts(facts)
-                    layer = load_layer()
-                    upsert_relationships(compare_layer(layer.facts, model, layer.documents))
-                    status.update(label=f"Processed {upload.name}: {len(facts)} grounded facts", state="complete")
+                    result = ingest_pdf(raw, upload.name, model)
+                    if result.status == "skipped":
+                        status.update(label=f"Skipped existing document: {upload.name}", state="complete")
+                    else:
+                        status.update(label=f"Processed {upload.name}: {result.fact_count} grounded facts", state="complete")
+                    st.caption(result.message)
                 except Exception as e:
                     status.update(label=f"Failed: {upload.name}", state="error")
                     st.exception(e)
